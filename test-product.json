@@ -1,0 +1,9 @@
+{
+  "name": "MacBook Air M1",
+  "description": "Apple MacBook Air with M1 chip, 13-inch display",
+  "price": 89999,
+  "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRdHFJGDxVYyBxdrORexqLq1kq2Zeb2Hb0jtA&s",
+  "category": "electronics",
+  "stock": 5,
+  "brand": "Apple"
+}
