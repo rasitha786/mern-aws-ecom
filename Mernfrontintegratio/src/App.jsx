@@ -347,14 +347,14 @@ function App() {
 
             {/* Contact Info */}
             <div>
-              <h3 className="text-lg font-bold mb-6">Contact Us</h3>
+              <h3 className="text-lg font-bold mb-6">Contact Us📞</h3>
               <ul className="space-y-4">
                 <li className="flex items-start">
                   <svg className="w-5 h-5 text-blue-400 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  <span className="text-gray-400">123 Street, Mumbai, India</span>
+                  <span className="text-gray-400">north Street,Kanada, India</span>
                 </li>
                 <li className="flex items-center">
                   <svg className="w-5 h-5 text-blue-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
