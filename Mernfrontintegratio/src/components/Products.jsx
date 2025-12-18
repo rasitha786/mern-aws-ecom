@@ -41,7 +41,7 @@ export default function Products({setCart,cart}) {
     const confirmDelete = window.confirm("Are you sure you want to delete?");
     if (!confirmDelete) return;
     
-    const res = await fetch(`https://mern-aws-ecom.vercel.app/api/deleteProduct/${id}`, {
+    const res = await fetch(`https://mern-aws-ecom.vercel.app/deleteProduct/${id}`, {
       method: "DELETE",
     });
     
