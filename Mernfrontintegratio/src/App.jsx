@@ -284,7 +284,7 @@ function App() {
                 <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-xl">A</span>
                 </div>
-                <span className="ml-3 text-2xl font-bold">AkiraMart</span>
+                <span className="ml-3 text-2xl font-bold">AKIRAMART🛒</span>
               </div>
               <p className="text-gray-400 mb-6 max-w-md">
                Hi Your one-stop destination for all the shopping needs. Quality products,best price fast delivery, and exceptional customer service.
