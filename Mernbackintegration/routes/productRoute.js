@@ -1,4 +1,5 @@
 const express = require("express");
+const { authenticate, adminOnly } = require("../middleware/auth");
 
 // Use backup controller if MongoDB is not available
 let controller;
@@ -12,8 +13,12 @@ if (process.env.USE_MEMORY_DB === 'true') {
 const { getProduct, postProduct, deleteProduct, updateProduct } = controller;
 const router = express.Router();
 
+// Public routes
 router.get("/getproduct", getProduct);
-router.post("/postProduct",postProduct)
-router.delete("/deleteProduct/:id",deleteProduct)
-router.put("/updateProduct/:id",updateProduct)
+
+// Protected routes (require authentication)
+router.post("/postProduct", authenticate, postProduct);
+router.delete("/deleteProduct/:id", authenticate, adminOnly, deleteProduct);
+router.put("/updateProduct/:id", authenticate, adminOnly, updateProduct);
+
 module.exports = router;

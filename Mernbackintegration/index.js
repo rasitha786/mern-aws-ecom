@@ -1,5 +1,6 @@
 const express = require("express");
-const ProductRoute = require("./routes/productRoute")
+const ProductRoute = require("./routes/productRoute");
+const AuthRoute = require("./routes/authRoute");
 const dotenv = require("dotenv");
 const connectdb = require("./config/db");
 dotenv.config();
@@ -31,6 +32,7 @@ app.use((error, req, res, next) => {
 });
 
 app.use("/api", ProductRoute);
+app.use("/api/auth", AuthRoute);
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);

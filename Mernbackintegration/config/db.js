@@ -17,7 +17,7 @@ const connectdb = async () => {
     } catch (error) {
         console.error("❌ Database Connection Failed:", error.message);
         console.log("💡 Check your Atlas connection string and IP whitelist");
-        process.exit(1);   
+        throw error;
     }
 };
 
