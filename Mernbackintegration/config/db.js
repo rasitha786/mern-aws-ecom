@@ -4,8 +4,7 @@ dotenv.config();
 
 const connectdb = async () => {
     try {
-        // Connect directly to Atlas
-        const atlasDB = process.env.MONGO_URL;
+        const atlasDB = process.env.MONGO_URI;  // ✅ Fixed here
         
         console.log("Connecting to MongoDB Atlas...");
         

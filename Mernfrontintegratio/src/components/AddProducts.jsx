@@ -46,6 +46,16 @@ export default function AddProducts() {
       brand: brand || "Generic"
     }
     
+    // ✅ Get token from localStorage
+    const user = localStorage.getItem("user");
+    const token = user ? JSON.parse(user).token : null;
+
+    if (!token) {
+      alert("❌ You are not logged in! Please login first.")
+      setLoading(false)
+      return
+    }
+
     console.log("Sending product data:", productData)
     console.log("API URL:", `${API}/api/postProduct`)
     
@@ -53,7 +63,8 @@ export default function AddProducts() {
       const res = await fetch(`${API}/api/postProduct`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` // ✅ Send token
         },
         body: JSON.stringify(productData)
       })
@@ -423,6 +434,9 @@ export default function AddProducts() {
                       </p>
                       {price && (
                         <p className="text-lg font-bold text-blue-700 mt-2">₹{price}</p>
+                      )}
+                      {brand && (
+                        <p className="text-sm text-gray-600 mt-1">{brand}</p>
                       )}
                     </div>
                   ) : (

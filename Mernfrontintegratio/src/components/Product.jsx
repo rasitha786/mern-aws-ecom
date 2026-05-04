@@ -19,7 +19,7 @@ export default function Product() {
           console.error("Error fetching product:", error);
           setLoading(false);
         });
-    }, [id]); // Added dependency to prevent infinite re-fetching
+    }, [id]);
 
     if (loading) {
       return (
@@ -74,7 +74,6 @@ export default function Product() {
                 />
               </div>
               
-              {/* Image Gallery (if available) */}
               <div className="flex space-x-3 mt-6">
                 <div className="w-20 h-20 rounded-lg border-2 border-blue-500 overflow-hidden">
                   <img 
@@ -83,7 +82,6 @@ export default function Product() {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                {/* Add more thumbnail images here if you have them */}
               </div>
             </div>
 
@@ -112,7 +110,6 @@ export default function Product() {
                   </p>
                 </div>
 
-                {/* Additional Information */}
                 <div className="mb-8">
                   <h3 className="text-lg font-semibold text-gray-800 mb-3">
                     Product Information
@@ -138,10 +135,12 @@ export default function Product() {
                 </div>
               </div>
 
-              {/* Action Buttons */}
+              {/* ✅ FIXED Action Buttons */}
               <div className="space-y-4">
+                {/* ✅ FIXED: was /buynow/${product._id}, now /checkout with state */}
                 <Link 
-                  to={`/buynow/${product._id}`}
+                  to="/checkout"
+                  state={{ product }}
                   className="block w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-lg font-semibold py-4 px-6 rounded-xl text-center transition-all duration-200 transform hover:scale-[1.02] shadow-lg hover:shadow-xl"
                 >
                   Buy Now
@@ -175,7 +174,6 @@ export default function Product() {
         <div className="mt-12">
           <h2 className="text-2xl font-bold text-gray-800 mb-6">You Might Also Like</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {/* You can add related products here */}
             <div className="text-center py-8">
               <p className="text-gray-500">More products coming soon!</p>
             </div>

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API } from "../utils/api";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -7,18 +8,48 @@ export default function Login() {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e?.preventDefault();
     setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      localStorage.setItem("user", email);
+    setError("");
+
+    try {
+      // ✅ Real API call to backend
+      const res = await fetch(`${API}/api/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        // ✅ Save token and user info properly
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify({
+          ...data.user,
+          token: data.token
+        }));
+        localStorage.setItem("name", JSON.stringify({
+          name: data.user.name,
+          role: data.user.role
+        }));
+
+        navigate("/");
+      } else {
+        setError(data.error || "Login failed. Please try again.");
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("Connection error. Make sure backend is running on http://localhost:5000");
+    } finally {
       setIsLoading(false);
-      navigate("/");
-    }, 1000);
+    }
   };
 
   const handleKeyPress = (e) => {
@@ -46,6 +77,14 @@ export default function Login() {
 
           {/* Form Section */}
           <div className="py-8 px-8 sm:px-10">
+
+            {/* ✅ Error Message */}
+            {error && (
+              <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+
             <form onSubmit={handleLogin} className="space-y-6">
               {/* Email Input */}
               <div>
@@ -99,6 +138,7 @@ export default function Login() {
                     name="password"
                     type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
+                    required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     onKeyPress={handleKeyPress}
@@ -132,8 +172,7 @@ export default function Login() {
               <div>
                 <button
                   type="submit"
-                  onClick={handleLogin}
-                  disabled={isLoading || !email}
+                  disabled={isLoading || !email || !password}
                   className="group relative w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-white font-medium bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200 transform hover:-translate-y-0.5"
                 >
                   {isLoading ? (
@@ -196,12 +235,6 @@ export default function Login() {
               </a>
             </p>
           </div>
-        </div>
-
-        {/* Demo Credentials */}
-        <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-          <h4 className="text-sm font-medium text-blue-800 mb-2">Demo Credentials</h4>
-          <p className="text-xs text-blue-600">Use any email address to login for demo purposes.</p>
         </div>
       </div>
     </div>
