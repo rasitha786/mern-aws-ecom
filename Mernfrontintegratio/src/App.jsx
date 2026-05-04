@@ -9,7 +9,9 @@ import Register from "./components/Register";
 import ProtectedRoute from "./pages/ProtectedRoute";
 import AddProducts from "./components/AddProducts";
 import Checkout from "./pages/Checkout";
-import Home from "./pages/Home";   
+import Home from "./pages/Home";  
+import AdminDashboard from './pages/AdminDashboard';
+import UserDashboard from './pages/UserDashboard';
 
 
 
@@ -77,16 +79,51 @@ function App() {
               </Link>
             </div>
 
-            {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-8">
-              <Link to="/" className={`font-medium transition-colors ${location.pathname === "/" ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-700 hover:text-blue-600"}`}>
+              <Link 
+                to="/" 
+                className={`font-medium transition-colors ${
+                  location.pathname === "/" 
+                    ? "text-blue-600 border-b-2 border-blue-600" 
+                    : "text-gray-700 hover:text-blue-600"
+                }`}
+              >
                 Home
               </Link>
-              <Link to="/products" className={`font-medium transition-colors ${location.pathname === "/products" ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-700 hover:text-blue-600"}`}>
+
+              <Link 
+                to="/products" 
+                className={`font-medium transition-colors ${
+                  location.pathname === "/products" 
+                    ? "text-blue-600 border-b-2 border-blue-600" 
+                    : "text-gray-700 hover:text-blue-600"
+                }`}
+              >
                 Products
               </Link>
+
+              {/* ✅ FIXED: Changed from "/admin" to "/admin/dashboard" */}
+              <Link 
+                to="/admin/dashboard" 
+                className={`font-medium transition-colors ${
+                  location.pathname === "/admin/dashboard" 
+                    ? "text-blue-600 border-b-2 border-blue-600" 
+                    : "text-gray-700 hover:text-blue-600"
+                }`}
+              >
+                Admin
+              </Link>
+
+              {/* optional admin-only feature */}
               {user?.role === "admin" && (
-                <Link to="/addproduct" className={`font-medium transition-colors ${location.pathname === "/addproduct" ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-700 hover:text-blue-600"}`}>
+                <Link 
+                  to="/addproduct" 
+                  className={`font-medium transition-colors ${
+                    location.pathname === "/addproduct" 
+                      ? "text-blue-600 border-b-2 border-blue-600" 
+                      : "text-gray-700 hover:text-blue-600"
+                  }`}
+                >
                   Add Product
                 </Link>
               )}
@@ -172,6 +209,14 @@ function App() {
                     <Link to="/register" className="font-medium py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg text-center" onClick={() => setIsMenuOpen(false)}>Register</Link>
                   </>
                 )}
+                {/* ✅ FIXED: Changed from "/admin" to "/admin/dashboard" */}
+                <Link 
+                  to="/admin/dashboard" 
+                  className={`font-medium py-2 ${location.pathname === "/admin/dashboard" ? "text-blue-600 bg-blue-50 rounded-lg px-4" : "text-gray-700 hover:text-blue-600"}`} 
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Admin
+                </Link>
               </div>
             </div>
           )}
@@ -182,7 +227,6 @@ function App() {
       <main className="flex-grow w-full overflow-x-hidden">
         <div className="w-full max-w-full">
           <Routes>
-            {/* ✅ FIXED: "/" now shows Home, not Products */}
             <Route path="/" element={<Home />} />
             <Route path="/products" element={<Products cart={cart} setCart={setCart} />} />
             <Route path="/product/:id" element={<Product />} />
@@ -204,6 +248,8 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/checkout" element={<Checkout />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/user/dashboard" element={<UserDashboard />} />
           </Routes>
         </div>
       </main>
@@ -232,7 +278,6 @@ function App() {
                 </a>
               </div>
             </div>
-
             <div>
               <h3 className="text-lg font-bold mb-6">Quick Links</h3>
               <ul className="space-y-3">
@@ -241,6 +286,8 @@ function App() {
                 <li><Link to="/cart" className="text-gray-400 hover:text-white transition-colors">Shopping Cart</Link></li>
                 <li><Link to="/register" className="text-gray-400 hover:text-white transition-colors">Register</Link></li>
                 <li><Link to="/login" className="text-gray-400 hover:text-white transition-colors">Login</Link></li>
+                {/* ✅ ADDED: Admin Dashboard link in footer */}
+                <li><Link to="/admin/dashboard" className="text-gray-400 hover:text-white transition-colors">Admin Dashboard</Link></li>
               </ul>
             </div>
 
