@@ -31,7 +31,7 @@ app.use((error, req, res, next) => {
 
 app.use("/api", ProductRoute);
 app.use("/api/auth", AuthRoute);
-app.use("/api", OrderRoute); // ✅ NEW — order routes
+app.use("/api/orders", OrderRoute);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

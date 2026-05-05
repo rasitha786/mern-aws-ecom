@@ -1,36 +1,38 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const orderItemSchema = new mongoose.Schema({
-  product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
-  name: String,
-  image: String,
-  price: Number,
-  quantity: { type: Number, default: 1 },
+  product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
+  name: { type: String, required: true },
+  image: { type: String },
+  price: { type: Number, required: true },
+  quantity: { type: Number, required: true, default: 1 },
+});
+
+const addressSchema = new mongoose.Schema({
+  fullName: { type: String, required: true },
+  phone: { type: String, required: true },
+  street: { type: String, required: true },
+  city: { type: String, required: true },
+  state: { type: String, required: true },
+  pincode: { type: String, required: true },
 });
 
 const orderSchema = new mongoose.Schema(
   {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    userName: String,
-    userEmail: String,
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     items: [orderItemSchema],
-    totalAmount: { type: Number, required: true },
-    paymentMethod: { type: String, default: "Cash on Delivery" },
-    paymentStatus: { type: String, enum: ["Pending", "Paid"], default: "Pending" },
+    shippingAddress: addressSchema,
+    paymentMethod: { type: String, enum: ['COD', 'Online'], default: 'COD' },
+    paymentStatus: { type: String, enum: ['Pending', 'Paid', 'Failed'], default: 'Pending' },
     orderStatus: {
       type: String,
-      enum: ["Processing", "Shipped", "Delivered", "Cancelled"],
-      default: "Processing",
+      enum: ['Processing', 'Shipped', 'Delivered', 'Cancelled'],
+      default: 'Processing',
     },
-    shippingAddress: {
-      name: String,
-      phone: String,
-      street: String,
-      city: String,
-      pincode: String,
-    },
+    totalAmount: { type: Number, required: true },
+    deliveredAt: { type: Date },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Order", orderSchema);
+module.exports = mongoose.model('Order', orderSchema);

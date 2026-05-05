@@ -1,482 +1,364 @@
-// src/pages/AdminDashboard.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { API } from "../utils/api";
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState('orders');
   const [products, setProducts] = useState([]);
-  const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showProductForm, setShowProductForm] = useState(false);
-  const [editingProduct, setEditingProduct] = useState(null);
-  const [productData, setProductData] = useState({
-    name: '',
-    price: '',
-    category: '',
-    stock: '',
-    image: '',
-    description: ''
-  });
+  const [activeTab, setActiveTab] = useState("overview");
+  const [editProduct, setEditProduct] = useState(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const navigate = useNavigate();
 
-  // Fetch data on component mount
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const token = user?.token;
+
+  // Redirect if not admin
   useEffect(() => {
-    fetchAllData();
+    if (!user || user.role !== "admin") {
+      navigate("/");
+    }
   }, []);
 
-  const fetchAllData = async () => {
-    setLoading(true);
-    const token = localStorage.getItem('token');
-    
+  const fetchProducts = async () => {
     try {
-      // Fetch products
-      const productsRes = await fetch('http://localhost:5000/api/products');
-      const productsData = await productsRes.json();
-      setProducts(Array.isArray(productsData) ? productsData : []);
-
-      // Fetch orders (only if admin)
-      const ordersRes = await fetch('http://localhost:5000/api/orders', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (ordersRes.ok) {
-        const ordersData = await ordersRes.json();
-        setOrders(Array.isArray(ordersData) ? ordersData : []);
-      } else {
-        setOrders([]);
-      }
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      setProducts([]);
-      setOrders([]);
+      setLoading(true);
+      const res = await fetch(`${API}/api/getproduct`);
+      const data = await res.json();
+      setProducts(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Add Product
-  const handleAddProduct = async (e) => {
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const deleteProduct = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this product?")) return;
+    try {
+      const res = await fetch(`${API}/api/deleteProduct/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok || res.status === 204) {
+        setProducts(products.filter(p => p._id !== id));
+        alert("✅ Product deleted!");
+      } else {
+        alert("❌ Failed to delete product");
+      }
+    } catch (err) {
+      alert("❌ Connection error");
+    }
+  };
+
+  const updateProduct = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
-    
     try {
-      const response = await fetch('http://localhost:5000/api/products', {
-        method: 'POST',
+      const res = await fetch(`${API}/api/updateProduct/${editProduct._id}`, {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({
-          ...productData,
-          price: Number(productData.price),
-          stock: Number(productData.stock)
-        })
+        body: JSON.stringify(editProduct)
       });
-      
-      if (response.ok) {
-        alert('Product added successfully!');
-        setShowProductForm(false);
-        setProductData({ name: '', price: '', category: '', stock: '', image: '', description: '' });
-        fetchAllData(); // Refresh the list
+      if (res.ok) {
+        alert("✅ Product updated!");
+        setEditProduct(null);
+        fetchProducts();
       } else {
-        const error = await response.json();
-        alert(error.message || 'Failed to add product');
+        alert("❌ Failed to update");
       }
-    } catch (error) {
-      console.error('Error:', error);
-      alert('Error adding product. Make sure backend is running.');
+    } catch (err) {
+      alert("❌ Connection error");
     }
   };
 
-  // Update Product
-  const handleUpdateProduct = async (e) => {
-    e.preventDefault();
-    const token = localStorage.getItem('token');
-    
-    try {
-      const response = await fetch(`http://localhost:5000/api/products/${editingProduct._id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          ...productData,
-          price: Number(productData.price),
-          stock: Number(productData.stock)
-        })
-      });
-      
-      if (response.ok) {
-        alert('Product updated successfully!');
-        setShowProductForm(false);
-        setEditingProduct(null);
-        setProductData({ name: '', price: '', category: '', stock: '', image: '', description: '' });
-        fetchAllData();
-      } else {
-        alert('Failed to update product');
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      alert('Error updating product');
-    }
-  };
+  const totalValue = products.reduce((sum, p) => sum + (p.price * (p.stock || 0)), 0);
+  const totalStock = products.reduce((sum, p) => sum + (p.stock || 0), 0);
+  const categories = [...new Set(products.map(p => p.category))];
 
-  // Delete Product
-  const handleDeleteProduct = async (productId) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
-      const token = localStorage.getItem('token');
-      
-      try {
-        const response = await fetch(`http://localhost:5000/api/products/${productId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (response.ok) {
-          alert('Product deleted successfully!');
-          fetchAllData();
-        } else {
-          alert('Failed to delete product');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        alert('Error deleting product');
-      }
-    }
-  };
-
-  // Update Order Status
-  const handleUpdateOrderStatus = async (orderId, newStatus) => {
-    const token = localStorage.getItem('token');
-    
-    try {
-      const response = await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ status: newStatus })
-      });
-      
-      if (response.ok) {
-        alert('Order status updated!');
-        fetchAllData();
-      } else {
-        alert('Failed to update order status');
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      alert('Error updating order status');
-    }
-  };
-
-  // Calculate statistics
-  const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0);
-  const totalOrders = orders.length;
-  const totalProducts = products.length;
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="text-xl">Loading Dashboard...</div>
-      </div>
-    );
-  }
+  const stats = [
+    { label: "Total Products", value: products.length, icon: "📦", color: "bg-blue-500" },
+    { label: "Categories", value: categories.length, icon: "🏷️", color: "bg-purple-500" },
+    { label: "Total Stock", value: totalStock, icon: "🏪", color: "bg-green-500" },
+    { label: "Inventory Value", value: `₹${totalValue.toLocaleString()}`, icon: "💰", color: "bg-orange-500" },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-600 mt-1">Manage your store efficiently</p>
+      {/* Top Bar */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold">A</span>
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">Admin Dashboard</h1>
+              <p className="text-sm text-gray-500">Welcome back, {user?.name}!</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link to="/" className="px-4 py-2 text-gray-600 hover:text-blue-600 font-medium transition-colors">← Back to Store</Link>
+            <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">● Online</span>
+          </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 text-sm">Total Revenue</p>
-                <p className="text-2xl font-bold text-green-600">
-                  ₹{totalRevenue.toLocaleString()}
-                </p>
-                {totalOrders === 0 && (
-                  <p className="text-xs text-gray-400 mt-1">Will show when orders are placed</p>
-                )}
-              </div>
-              <div className="text-3xl">💰</div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 text-sm">Total Orders</p>
-                <p className="text-2xl font-bold text-blue-600">{totalOrders}</p>
-                {totalOrders === 0 && (
-                  <p className="text-xs text-gray-400 mt-1">No orders placed yet</p>
-                )}
-              </div>
-              <div className="text-3xl">📦</div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 text-sm">Products</p>
-                <p className="text-2xl font-bold text-purple-600">{totalProducts}</p>
-                {totalProducts === 0 && (
-                  <p className="text-xs text-gray-400 mt-1">Add your first product</p>
-                )}
-              </div>
-              <div className="text-3xl">🛍️</div>
-            </div>
-          </div>
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Tabs */}
+        <div className="flex gap-2 mb-8 bg-white p-1 rounded-xl shadow-sm w-fit">
+          {[
+            { id: "overview", label: "📊 Overview" },
+            { id: "products", label: "📦 Products" },
+            { id: "add", label: "➕ Add Product" },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-5 py-2 rounded-lg font-medium transition-all ${activeTab === tab.id ? "bg-blue-600 text-white shadow" : "text-gray-600 hover:bg-gray-100"}`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="bg-white rounded-lg shadow mb-6">
-          <div className="border-b border-gray-200">
-            <nav className="flex">
-              <button
-                onClick={() => setActiveTab('orders')}
-                className={`px-6 py-3 font-medium ${
-                  activeTab === 'orders'
-                    ? 'text-blue-600 border-b-2 border-blue-600'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                All Orders
-              </button>
-              <button
-                onClick={() => setActiveTab('products')}
-                className={`px-6 py-3 font-medium ${
-                  activeTab === 'products'
-                    ? 'text-blue-600 border-b-2 border-blue-600'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Manage Products
-              </button>
-            </nav>
-          </div>
-        </div>
+        {/* Overview Tab */}
+        {activeTab === "overview" && (
+          <div>
+            {/* Stats */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              {stats.map((s, i) => (
+                <div key={i} className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-3xl">{s.icon}</span>
+                    <div className={`${s.color} w-10 h-10 rounded-full flex items-center justify-center opacity-20`}></div>
+                  </div>
+                  <p className="text-gray-500 text-sm mb-1">{s.label}</p>
+                  <p className="text-3xl font-extrabold text-gray-900">{s.value}</p>
+                </div>
+              ))}
+            </div>
 
-        {/* Orders Tab */}
-        {activeTab === 'orders' && (
-          <div className="bg-white rounded-lg shadow">
-            <div className="p-6">
-              <h2 className="text-xl font-semibold mb-4">All Orders</h2>
-              {orders.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="text-6xl mb-4">📋</div>
-                  <p className="text-gray-500 text-lg">No orders yet</p>
-                  <p className="text-gray-400 text-sm mt-2">
-                    Once customers place orders, they will appear here
-                  </p>
+            {/* Category Breakdown */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white rounded-2xl p-6 shadow-sm">
+                <h3 className="text-lg font-bold text-gray-900 mb-6">Products by Category</h3>
+                <div className="space-y-4">
+                  {categories.map(cat => {
+                    const count = products.filter(p => p.category === cat).length;
+                    const pct = Math.round((count / products.length) * 100);
+                    return (
+                      <div key={cat}>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className="font-medium capitalize text-gray-700">{cat}</span>
+                          <span className="text-gray-500">{count} products ({pct}%)</span>
+                        </div>
+                        <div className="w-full bg-gray-100 rounded-full h-2">
+                          <div className="bg-blue-500 h-2 rounded-full transition-all" style={{ width: `${pct}%` }}></div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order ID</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {orders.map((order) => (
-                        <tr key={order._id}>
-                          <td className="px-6 py-4 text-sm font-mono">#{order._id?.slice(-8)}</td>
-                          <td className="px-6 py-4 text-sm">{order.user?.name || 'Guest'}</td>
-                          <td className="px-6 py-4 text-sm font-medium">₹{order.total}</td>
-                          <td className="px-6 py-4">
-                            <select
-                              value={order.status}
-                              onChange={(e) => handleUpdateOrderStatus(order._id, e.target.value)}
-                              className="text-sm border rounded px-2 py-1"
-                            >
-                              <option value="pending">Pending</option>
-                              <option value="processing">Processing</option>
-                              <option value="shipped">Shipped</option>
-                              <option value="delivered">Delivered</option>
-                              <option value="cancelled">Cancelled</option>
-                            </select>
-                          </td>
-                          <td className="px-6 py-4 text-sm">
-                            {new Date(order.createdAt).toLocaleDateString()}
-                          </td>
-                          <td className="px-6 py-4">
-                            <button 
-                              onClick={() => alert(`Order details:\nCustomer: ${order.user?.name}\nTotal: ₹${order.total}\nStatus: ${order.status}`)}
-                              className="text-blue-600 hover:text-blue-800"
-                            >
-                              View Details
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+              </div>
+
+              <div className="bg-white rounded-2xl p-6 shadow-sm">
+                <h3 className="text-lg font-bold text-gray-900 mb-6">Recent Products</h3>
+                <div className="space-y-3">
+                  {products.slice(0, 5).map(p => (
+                    <div key={p._id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                      <img src={p.image} alt={p.name} className="w-10 h-10 rounded-lg object-cover" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 truncate">{p.name}</p>
+                        <p className="text-sm text-gray-500">₹{p.price} • Stock: {p.stock || 0}</p>
+                      </div>
+                      <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full capitalize">{p.category}</span>
+                    </div>
+                  ))}
                 </div>
-              )}
+              </div>
             </div>
           </div>
         )}
 
         {/* Products Tab */}
-        {activeTab === 'products' && (
-          <div>
-            <div className="mb-4 flex justify-end">
-              <button
-                onClick={() => {
-                  setEditingProduct(null);
-                  setProductData({ name: '', price: '', category: '', stock: '', image: '', description: '' });
-                  setShowProductForm(true);
-                }}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-              >
-                + Add New Product
+        {activeTab === "products" && (
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className="p-6 border-b flex justify-between items-center">
+              <h3 className="text-lg font-bold text-gray-900">All Products ({products.length})</h3>
+              <button onClick={() => setActiveTab("add")} className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                + Add Product
               </button>
             </div>
 
-            {/* Product Form Modal */}
-            {showProductForm && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
-                  <h2 className="text-xl font-bold mb-4">
-                    {editingProduct ? 'Edit Product' : 'Add New Product'}
-                  </h2>
-                  <form onSubmit={editingProduct ? handleUpdateProduct : handleAddProduct}>
-                    <div className="space-y-3">
-                      <input
-                        type="text"
-                        placeholder="Product Name"
-                        value={productData.name}
-                        onChange={(e) => setProductData({ ...productData, name: e.target.value })}
-                        className="w-full border rounded px-3 py-2"
-                        required
-                      />
-                      <input
-                        type="number"
-                        placeholder="Price"
-                        value={productData.price}
-                        onChange={(e) => setProductData({ ...productData, price: e.target.value })}
-                        className="w-full border rounded px-3 py-2"
-                        required
-                      />
-                      <input
-                        type="text"
-                        placeholder="Category"
-                        value={productData.category}
-                        onChange={(e) => setProductData({ ...productData, category: e.target.value })}
-                        className="w-full border rounded px-3 py-2"
-                        required
-                      />
-                      <input
-                        type="number"
-                        placeholder="Stock"
-                        value={productData.stock}
-                        onChange={(e) => setProductData({ ...productData, stock: e.target.value })}
-                        className="w-full border rounded px-3 py-2"
-                        required
-                      />
-                      <input
-                        type="text"
-                        placeholder="Image URL"
-                        value={productData.image}
-                        onChange={(e) => setProductData({ ...productData, image: e.target.value })}
-                        className="w-full border rounded px-3 py-2"
-                      />
-                      <textarea
-                        placeholder="Description"
-                        value={productData.description}
-                        onChange={(e) => setProductData({ ...productData, description: e.target.value })}
-                        className="w-full border rounded px-3 py-2"
-                        rows="3"
-                      />
-                      <div className="flex gap-2 pt-3">
-                        <button type="submit" className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
-                          {editingProduct ? 'Update' : 'Add'} Product
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowProductForm(false);
-                            setEditingProduct(null);
-                          }}
-                          className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  </form>
-                </div>
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mx-auto"></div>
+                <p className="text-gray-500 mt-3">Loading products...</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Product</th>
+                      <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Category</th>
+                      <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Price</th>
+                      <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Stock</th>
+                      <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {products.map(p => (
+                      <tr key={p._id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <img src={p.image} alt={p.name} className="w-10 h-10 rounded-lg object-cover" />
+                            <div>
+                              <p className="font-medium text-gray-900">{p.name}</p>
+                              <p className="text-sm text-gray-500 truncate max-w-xs">{p.description?.slice(0, 40)}...</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium capitalize">{p.category}</span>
+                        </td>
+                        <td className="px-6 py-4 font-bold text-gray-900">₹{p.price}</td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${(p.stock || 0) > 10 ? "bg-green-100 text-green-700" : (p.stock || 0) > 0 ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"}`}>
+                            {p.stock || 0} units
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex gap-2">
+                            <button onClick={() => setEditProduct(p)} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-200 transition-colors">✏️ Edit</button>
+                            <button onClick={() => deleteProduct(p._id)} className="px-3 py-1 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 transition-colors">🗑️ Delete</button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
+          </div>
+        )}
 
-            {/* Products Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {products.length === 0 ? (
-                <div className="col-span-3 text-center py-12 bg-white rounded-lg">
-                  <div className="text-6xl mb-4">📦</div>
-                  <p className="text-gray-500 text-lg">No products found</p>
-                  <p className="text-gray-400 text-sm mt-2">
-                    Click "Add New Product" to add your first product
-                  </p>
-                </div>
-              ) : (
-                products.map((product) => (
-                  <div key={product._id} className="bg-white rounded-lg shadow overflow-hidden">
-                    <img 
-                      src={product.image || 'https://via.placeholder.com/300'} 
-                      alt={product.name}
-                      className="w-full h-48 object-cover"
-                    />
-                    <div className="p-4">
-                      <h3 className="font-semibold text-lg">{product.name}</h3>
-                      <p className="text-gray-600">₹{product.price}</p>
-                      <p className="text-sm text-gray-500">Stock: {product.stock} units</p>
-                      <p className="text-sm text-gray-500">Category: {product.category}</p>
-                      <div className="flex gap-2 mt-4">
-                        <button
-                          onClick={() => {
-                            setEditingProduct(product);
-                            setProductData(product);
-                            setShowProductForm(true);
-                          }}
-                          className="flex-1 bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteProduct(product._id)}
-                          className="flex-1 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
+        {/* Add Product Tab */}
+        {activeTab === "add" && (
+          <div className="max-w-2xl">
+            <div className="bg-white rounded-2xl shadow-sm p-8">
+              <h3 className="text-xl font-bold text-gray-900 mb-6">Add New Product</h3>
+              <AddProductForm token={token} onSuccess={() => { fetchProducts(); setActiveTab("products"); }} />
             </div>
           </div>
         )}
       </div>
+
+      {/* Edit Modal */}
+      {editProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-8">
+            <h3 className="text-xl font-bold text-gray-900 mb-6">Edit Product</h3>
+            <form onSubmit={updateProduct} className="space-y-4">
+              {["name", "description", "price", "image", "stock"].map(field => (
+                <div key={field}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">{field}</label>
+                  {field === "description" ? (
+                    <textarea
+                      value={editProduct[field] || ""}
+                      onChange={e => setEditProduct({ ...editProduct, [field]: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      rows="3"
+                    />
+                  ) : (
+                    <input
+                      type={field === "price" || field === "stock" ? "number" : "text"}
+                      value={editProduct[field] || ""}
+                      onChange={e => setEditProduct({ ...editProduct, [field]: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                  )}
+                </div>
+              ))}
+              <div className="flex gap-3 pt-4">
+                <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-lg transition-colors">Save Changes</button>
+                <button type="button" onClick={() => setEditProduct(null)} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 rounded-lg transition-colors">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+function AddProductForm({ token, onSuccess }) {
+  const [form, setForm] = useState({ name: "", description: "", price: "", image: "", category: "electronics", stock: "", brand: "" });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const res = await fetch(`${API}/api/postProduct`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ ...form, price: parseFloat(form.price), stock: parseInt(form.stock) })
+      });
+      if (res.ok || res.status === 201) {
+        alert("✅ Product added successfully!");
+        setForm({ name: "", description: "", price: "", image: "", category: "electronics", stock: "", brand: "" });
+        onSuccess();
+      } else {
+        const data = await res.json();
+        alert(`❌ ${data.message || "Failed to add product"}`);
+      }
+    } catch (err) {
+      alert("❌ Connection error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {[
+        { key: "name", label: "Product Name", type: "text", placeholder: "Enter product name" },
+        { key: "price", label: "Price (₹)", type: "number", placeholder: "0.00" },
+        { key: "stock", label: "Stock Quantity", type: "number", placeholder: "0" },
+        { key: "brand", label: "Brand (Optional)", type: "text", placeholder: "Brand name" },
+        { key: "image", label: "Image URL", type: "text", placeholder: "https://..." },
+      ].map(f => (
+        <div key={f.key}>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{f.label}</label>
+          <input type={f.type} placeholder={f.placeholder} value={form[f.key]} onChange={e => setForm({ ...form, [f.key]: e.target.value })}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required={f.key !== "brand"} />
+        </div>
+      ))}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+        <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" rows="3" placeholder="Product description" required />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+        <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+          {["electronics", "clothing", "home", "books", "beauty", "sports", "toys", "food", "other"].map(c => (
+            <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
+          ))}
+        </select>
+      </div>
+      <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-lg transition-colors disabled:opacity-50">
+        {loading ? "Adding..." : "Add Product"}
+      </button>
+    </form>
   );
 }

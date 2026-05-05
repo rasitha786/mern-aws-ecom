@@ -8,12 +8,9 @@ import Login from "./components/Login";
 import Register from "./components/Register";
 import ProtectedRoute from "./pages/ProtectedRoute";
 import AddProducts from "./components/AddProducts";
-import Checkout from "./pages/Checkout";
-import Home from "./pages/Home";  
-import AdminDashboard from './pages/AdminDashboard';
-import UserDashboard from './pages/UserDashboard';
-
-
+import Home from "./pages/Home";
+import AdminDashboard from "./pages/AdminDashboard";
+import UserDashboard from "./pages/UserDashboard";
 
 function App() {
   const [cart, setCart] = useState([]);
@@ -23,9 +20,7 @@ function App() {
 
   useEffect(() => {
     const savedCart = localStorage.getItem("cart");
-    if (savedCart) {
-      setCart(JSON.parse(savedCart));
-    }
+    if (savedCart) setCart(JSON.parse(savedCart));
 
     try {
       const savedUser = localStorage.getItem("user");
@@ -57,8 +52,7 @@ function App() {
   };
 
   const totalCartItems = cart.reduce((total, item) => {
-    const quantity = item.quantity || 1;
-    return total + quantity;
+    return total + (item.quantity || 1);
   }, 0);
 
   return (
@@ -79,58 +73,36 @@ function App() {
               </Link>
             </div>
 
+            {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-8">
-              <Link 
-                to="/" 
-                className={`font-medium transition-colors ${
-                  location.pathname === "/" 
-                    ? "text-blue-600 border-b-2 border-blue-600" 
-                    : "text-gray-700 hover:text-blue-600"
-                }`}
-              >
+              <Link to="/" className={`font-medium transition-colors ${location.pathname === "/" ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-700 hover:text-blue-600"}`}>
                 Home
               </Link>
-
-              <Link 
-                to="/products" 
-                className={`font-medium transition-colors ${
-                  location.pathname === "/products" 
-                    ? "text-blue-600 border-b-2 border-blue-600" 
-                    : "text-gray-700 hover:text-blue-600"
-                }`}
-              >
+              <Link to="/products" className={`font-medium transition-colors ${location.pathname === "/products" ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-700 hover:text-blue-600"}`}>
                 Products
               </Link>
-
-              {/* ✅ FIXED: Changed from "/admin" to "/admin/dashboard" */}
-              <Link 
-                to="/admin/dashboard" 
-                className={`font-medium transition-colors ${
-                  location.pathname === "/admin/dashboard" 
-                    ? "text-blue-600 border-b-2 border-blue-600" 
-                    : "text-gray-700 hover:text-blue-600"
-                }`}
-              >
-                Admin
-              </Link>
-
-              {/* optional admin-only feature */}
+              {/* ✅ Only show for admin */}
               {user?.role === "admin" && (
-                <Link 
-                  to="/addproduct" 
-                  className={`font-medium transition-colors ${
-                    location.pathname === "/addproduct" 
-                      ? "text-blue-600 border-b-2 border-blue-600" 
-                      : "text-gray-700 hover:text-blue-600"
-                  }`}
-                >
-                  Add Product
+                <>
+                  <Link to="/addproduct" className={`font-medium transition-colors ${location.pathname === "/addproduct" ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-700 hover:text-blue-600"}`}>
+                    Add Product
+                  </Link>
+                  <Link to="/admin/dashboard" className={`font-medium transition-colors ${location.pathname === "/admin/dashboard" ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-700 hover:text-blue-600"}`}>
+                    🛠️ Admin
+                  </Link>
+                </>
+              )}
+              {/* ✅ Show My Account for logged in users */}
+              {user && (
+                <Link to="/user/dashboard" className={`font-medium transition-colors ${location.pathname === "/user/dashboard" ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-700 hover:text-blue-600"}`}>
+                  👤 My Account
                 </Link>
               )}
             </nav>
 
             {/* Right Side Actions */}
             <div className="flex items-center space-x-4">
+              {/* Cart */}
               <Link to="/cart" className="relative p-2 text-gray-700 hover:text-blue-600 transition-colors">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -142,16 +114,19 @@ function App() {
                 )}
               </Link>
 
+              {/* User Actions */}
               <div className="relative">
                 {user ? (
-                  <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-3">
                     <div className="hidden md:flex items-center">
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                        <span className="text-blue-600 font-medium text-sm">
-                          {user?.name?.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                      <span className="ml-2 text-gray-700 font-medium">{user?.name}</span>
+                      <Link to="/user/dashboard" className="flex items-center hover:opacity-80 transition-opacity">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                          <span className="text-blue-600 font-medium text-sm">
+                            {user?.name?.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <span className="ml-2 text-gray-700 font-medium">{user?.name}</span>
+                      </Link>
                     </div>
                     <button onClick={logout} className="hidden md:inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors">
                       Logout
@@ -169,6 +144,7 @@ function App() {
                 )}
               </div>
 
+              {/* Mobile Menu Button */}
               <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="md:hidden p-2 text-gray-700 hover:text-blue-600">
                 {isMenuOpen ? (
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -189,12 +165,16 @@ function App() {
               <div className="flex flex-col space-y-4 px-4">
                 <Link to="/" className={`font-medium py-2 ${location.pathname === "/" ? "text-blue-600 bg-blue-50 rounded-lg px-4" : "text-gray-700 hover:text-blue-600"}`} onClick={() => setIsMenuOpen(false)}>Home</Link>
                 <Link to="/products" className={`font-medium py-2 ${location.pathname === "/products" ? "text-blue-600 bg-blue-50 rounded-lg px-4" : "text-gray-700 hover:text-blue-600"}`} onClick={() => setIsMenuOpen(false)}>Products</Link>
-                {user?.role === "admin" && (
-                  <Link to="/addproduct" className={`font-medium py-2 ${location.pathname === "/addproduct" ? "text-blue-600 bg-blue-50 rounded-lg px-4" : "text-gray-700 hover:text-blue-600"}`} onClick={() => setIsMenuOpen(false)}>Add Product</Link>
-                )}
                 <Link to="/cart" className={`font-medium py-2 ${location.pathname === "/cart" ? "text-blue-600 bg-blue-50 rounded-lg px-4" : "text-gray-700 hover:text-blue-600"}`} onClick={() => setIsMenuOpen(false)}>Cart ({totalCartItems})</Link>
+                {user?.role === "admin" && (
+                  <>
+                    <Link to="/addproduct" className={`font-medium py-2 ${location.pathname === "/addproduct" ? "text-blue-600 bg-blue-50 rounded-lg px-4" : "text-gray-700 hover:text-blue-600"}`} onClick={() => setIsMenuOpen(false)}>Add Product</Link>
+                    <Link to="/admin/dashboard" className={`font-medium py-2 ${location.pathname === "/admin/dashboard" ? "text-blue-600 bg-blue-50 rounded-lg px-4" : "text-gray-700 hover:text-blue-600"}`} onClick={() => setIsMenuOpen(false)}>🛠️ Admin Dashboard</Link>
+                  </>
+                )}
                 {user ? (
                   <>
+                    <Link to="/user/dashboard" className={`font-medium py-2 ${location.pathname === "/user/dashboard" ? "text-blue-600 bg-blue-50 rounded-lg px-4" : "text-gray-700 hover:text-blue-600"}`} onClick={() => setIsMenuOpen(false)}>👤 My Account</Link>
                     <div className="flex items-center py-2 px-4 bg-gray-50 rounded-lg">
                       <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                         <span className="text-blue-600 font-medium text-sm">{user?.name?.charAt(0).toUpperCase()}</span>
@@ -209,14 +189,6 @@ function App() {
                     <Link to="/register" className="font-medium py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg text-center" onClick={() => setIsMenuOpen(false)}>Register</Link>
                   </>
                 )}
-                {/* ✅ FIXED: Changed from "/admin" to "/admin/dashboard" */}
-                <Link 
-                  to="/admin/dashboard" 
-                  className={`font-medium py-2 ${location.pathname === "/admin/dashboard" ? "text-blue-600 bg-blue-50 rounded-lg px-4" : "text-gray-700 hover:text-blue-600"}`} 
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Admin
-                </Link>
               </div>
             </div>
           )}
@@ -247,9 +219,16 @@ function App() {
             } />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/checkout" element={<Checkout />} />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/user/dashboard" element={<UserDashboard />} />
+            <Route path="/admin/dashboard" element={
+              <ProtectedRoute>
+                <AdminDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/user/dashboard" element={
+              <ProtectedRoute>
+                <UserDashboard />
+              </ProtectedRoute>
+            } />
           </Routes>
         </div>
       </main>
@@ -278,6 +257,7 @@ function App() {
                 </a>
               </div>
             </div>
+
             <div>
               <h3 className="text-lg font-bold mb-6">Quick Links</h3>
               <ul className="space-y-3">
@@ -286,8 +266,6 @@ function App() {
                 <li><Link to="/cart" className="text-gray-400 hover:text-white transition-colors">Shopping Cart</Link></li>
                 <li><Link to="/register" className="text-gray-400 hover:text-white transition-colors">Register</Link></li>
                 <li><Link to="/login" className="text-gray-400 hover:text-white transition-colors">Login</Link></li>
-                {/* ✅ ADDED: Admin Dashboard link in footer */}
-                <li><Link to="/admin/dashboard" className="text-gray-400 hover:text-white transition-colors">Admin Dashboard</Link></li>
               </ul>
             </div>
 

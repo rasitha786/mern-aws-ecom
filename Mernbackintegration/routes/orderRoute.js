@@ -1,20 +1,28 @@
-const express = require("express");
-const { authenticate, adminOnly } = require("../middleware/auth");
+const express = require('express');
 const {
   createOrder,
   getMyOrders,
   getAllOrders,
   updateOrderStatus,
-} = require("../controller/orderController");
+  getSalesAnalytics,
+} = require('../controller/orderController');
+const { authenticate, adminOnly } = require('../middleware/auth');
 
 const router = express.Router();
 
-// User routes
-router.post("/orders", authenticate, createOrder);
-router.get("/orders/my", authenticate, getMyOrders);
+// ── Admin: analytics MUST come before /:id ──
+router.get('/analytics', authenticate, adminOnly, getSalesAnalytics); // GET /api/orders/analytics
 
-// Admin routes
-router.get("/orders/all", authenticate, adminOnly, getAllOrders);
-router.put("/orders/:id/status", authenticate, adminOnly, updateOrderStatus);
+// ── Admin: all orders ──
+router.get('/all', authenticate, adminOnly, getAllOrders);             // GET /api/orders/all
+
+// ── User: my orders ──
+router.get('/my', authenticate, getMyOrders);                         // GET /api/orders/my
+
+// ── User: place order ──
+router.post('/', authenticate, createOrder);                          // POST /api/orders
+
+// ── Admin: update order status ──
+router.put('/:id', authenticate, adminOnly, updateOrderStatus);       // PUT /api/orders/:id
 
 module.exports = router;

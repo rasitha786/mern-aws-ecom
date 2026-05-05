@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import { API } from "../utils/api"; 
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 
 export default function Product() {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [addedToCart, setAddedToCart] = useState(false);
     
     useEffect(() => {
       fetch(`${API}/api/getproduct`)
@@ -20,6 +22,19 @@ export default function Product() {
           setLoading(false);
         });
     }, [id]);
+
+    const handleAddToCart = () => {
+      const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+      const existing = cart.find(item => item._id === product._id);
+      if (existing) {
+        existing.quantity = (existing.quantity || 1) + 1;
+      } else {
+        cart.push({ ...product, quantity: 1 });
+      }
+      localStorage.setItem("cart", JSON.stringify(cart));
+      setAddedToCart(true);
+      setTimeout(() => setAddedToCart(false), 2000);
+    };
 
     if (loading) {
       return (
@@ -36,7 +51,7 @@ export default function Product() {
             <h2 className="text-2xl font-bold text-gray-800 mb-4">Product Not Found</h2>
             <p className="text-gray-600 mb-8">The product you're looking for doesn't exist or has been removed.</p>
             <Link 
-              to="/" 
+              to="/products" 
               className="inline-block bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200"
             >
               Browse Products
@@ -53,7 +68,7 @@ export default function Product() {
         <nav className="mb-8">
           <ol className="flex items-center space-x-2 text-sm">
             <li>
-              <Link to="/" className="text-blue-500 hover:text-blue-600">
+              <Link to="/products" className="text-blue-500 hover:text-blue-600">
                 Products
               </Link>
             </li>
@@ -73,7 +88,6 @@ export default function Product() {
                   className="w-full h-full object-contain p-4"
                 />
               </div>
-              
               <div className="flex space-x-3 mt-6">
                 <div className="w-20 h-20 rounded-lg border-2 border-blue-500 overflow-hidden">
                   <img 
@@ -97,7 +111,7 @@ export default function Product() {
                     ₹{product.price}
                   </span>
                   <span className="ml-4 text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full">
-                    Free Shipping
+                    {product.price > 999 ? "Free Shipping" : "₹49 Shipping"}
                   </span>
                 </div>
 
@@ -121,15 +135,17 @@ export default function Product() {
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Category</p>
-                      <p className="text-gray-700 font-medium">{product.category || "General"}</p>
+                      <p className="text-gray-700 font-medium capitalize">{product.category || "General"}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">In Stock</p>
-                      <p className="text-green-600 font-medium">Available</p>
+                      <p className={`font-medium ${product.stock > 0 ? "text-green-600" : "text-red-500"}`}>
+                        {product.stock > 0 ? `${product.stock} Available` : "Out of Stock"}
+                      </p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">Warranty</p>
-                      <p className="text-gray-700 font-medium">1 Year</p>
+                      <p className="text-sm text-gray-500">Brand</p>
+                      <p className="text-gray-700 font-medium">{product.brand || "Generic"}</p>
                     </div>
                   </div>
                 </div>
@@ -137,21 +153,27 @@ export default function Product() {
 
               {/* ✅ FIXED Action Buttons */}
               <div className="space-y-4">
-                {/* ✅ FIXED: was /buynow/${product._id}, now /checkout with state */}
-                <Link 
-                  to="/checkout"
-                  state={{ product }}
+                {/* ✅ Buy Now → goes to /buynow/:id */}
+                <button
+                  onClick={() => navigate(`/buynow/${product._id}`)}
                   className="block w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-lg font-semibold py-4 px-6 rounded-xl text-center transition-all duration-200 transform hover:scale-[1.02] shadow-lg hover:shadow-xl"
                 >
-                  Buy Now
-                </Link>
+                  ⚡ Buy Now
+                </button>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <button className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-3 px-6 rounded-lg transition-colors duration-200">
-                    Add to Wishlist
+                    ♡ Add to Wishlist
                   </button>
-                  <button className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-medium py-3 px-6 rounded-lg transition-colors duration-200">
-                    Add to Cart
+                  <button
+                    onClick={handleAddToCart}
+                    className={`font-medium py-3 px-6 rounded-lg transition-all duration-200 ${
+                      addedToCart
+                        ? "bg-green-500 text-white"
+                        : "bg-emerald-50 hover:bg-emerald-100 text-emerald-700"
+                    }`}
+                  >
+                    {addedToCart ? "✅ Added!" : "🛒 Add to Cart"}
                   </button>
                 </div>
                 
@@ -183,7 +205,7 @@ export default function Product() {
         {/* Back Button */}
         <div className="mt-8">
           <Link 
-            to="/"
+            to="/products"
             className="inline-flex items-center text-blue-500 hover:text-blue-600 font-medium"
           >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -194,5 +216,5 @@ export default function Product() {
         </div>
       </div>
     </div>
-  )
+  );
 }
